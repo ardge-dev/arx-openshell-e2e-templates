@@ -1,0 +1,73 @@
+version: "1.0"
+
+metadata:
+  id: apps.opencode
+  name: OpenCode
+  version: 1.18.33
+  releaseDate: 2026-09-30
+  type: apps
+  categories:
+    - Developer Tools
+  subtitle: "An AI coding agent that runs inside an OpenShell sandbox and uses models deployed on ARX, with every file and network access governed by policy."
+  description: |
+    OpenCode is an open-source AI coding agent that reads, writes and runs code in its workspace.
+
+    On ARX it runs inside an OpenShell sandbox rather than as an ordinary container. The sandbox policy decides which paths the agent may touch and which hosts it may reach; everything else is denied by the kernel and the sandbox supervisor, not by the agent itself.
+
+    The agent calls models deployed on ARX through the llm-gateway. It never holds the real inference token: it only sees a placeholder, which the supervisor swaps for the token on requests to the gateway.
+  icon: ./opencode.svg
+  developer:
+    name: Anomaly
+    url: https://github.com/anomalyco/opencode
+  supportedLanguages:
+    - en-US
+  tags:
+    - agent
+    - coding
+    - sandbox
+    - openshell
+
+resources:
+  cpu: "1"
+  memory: "1Gi"
+  storage: "5Gi"
+  gpu: 0
+  vram: null
+
+deployment:
+  type: openshell
+  sandbox:
+    image: ghcr.io/anomalyco/opencode:1.18.33
+    command:
+      - /usr/local/bin/opencode
+      - serve
+      - --hostname
+      - 127.0.0.1
+      - --port
+      - "4096"
+    env:
+      OPENCODE_DISABLE_AUTOUPDATE: "1"
+      # Model served by the llm-gateway. The PoC deploys Qwen3.6 under this
+      # name; a form field will replace it once sandbox apps take form values.
+      ARX_LLM_MODEL: qwen36-agent
+      OPENCODE_CONFIG_CONTENT: >-
+        {"$schema":"https://opencode.ai/config.json",
+        "provider":{"arx":{"npm":"@ai-sdk/openai-compatible","name":"ARX LLM Gateway",
+        "options":{"baseURL":"{env:ARX_LLM_BASE_URL}","apiKey":"{env:ARX_LLM_API_KEY}"},
+        "models":{"{env:ARX_LLM_MODEL}":{"name":"ARX model"}}}},
+        "model":"arx/{env:ARX_LLM_MODEL}",
+        "autoupdate":false,"share":"disabled",
+        "permission":{"bash":"allow","edit":"allow","webfetch":"allow"}}
+    policy:
+      filesystem:
+        includeWorkdir: true
+        readOnly:
+          - /usr
+          - /lib
+          - /etc
+          - /bin
+        readWrite:
+          - /tmp
+    inference:
+      binaries:
+        - /usr/local/bin/opencode

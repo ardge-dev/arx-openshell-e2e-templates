@@ -1,0 +1,10 @@
+apiVersion: arx.ardge.com/v1
+kind: ArxBinding
+spec:
+  # The operator delivers this binding through an OpenShell provider: the
+  # sandbox sees ARX_LLM_BASE_URL as is and ARX_LLM_API_KEY only as a
+  # placeholder the supervisor resolves on requests to the llm-gateway.
+  ai:
+    inject:
+      baseUrl: ARX_LLM_BASE_URL
+      apiKey: ARX_LLM_API_KEY
