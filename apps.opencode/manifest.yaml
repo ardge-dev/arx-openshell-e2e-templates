@@ -4,7 +4,7 @@ metadata:
   id: apps.opencode
   name: OpenCode
   version: 1.18.33
-  releaseDate: 2026-09-30
+  releaseDate: 2026-10-20
   type: apps
   categories:
     - Developer Tools
@@ -27,6 +27,30 @@ metadata:
     - sandbox
     - openshell
 
+# The agent is useless without a model, so the slot is required. The
+# instance the user picks reaches the sandbox as ARX_LLM_MODEL (arx.yaml).
+dependencies:
+  - kind: models
+    match:
+      llm:
+        conditions:
+          model.categories: [llm]
+          model.params: ">=30b"
+    recommends:
+      - id: qwen3-6-35b
+        name: "Qwen3.6 35B"
+        models:
+          llm:
+            id: library.models.qwen3-6@35b-a3b-fp8
+            deploy:
+              contextWindow: 262144
+              inferenceEngine: nvidia-vllm
+              override:
+                enable-prefix-caching: ""
+                enable-auto-tool-choice: ""
+                reasoning-parser: "qwen3"
+                tool-call-parser: "qwen3_coder"
+
 resources:
   cpu: "1"
   memory: "1Gi"
@@ -47,9 +71,8 @@ deployment:
       - "4096"
     env:
       OPENCODE_DISABLE_AUTOUPDATE: "1"
-      # Model served by the llm-gateway. The PoC deploys Qwen3.6 under this
-      # name; a form field will replace it once sandbox apps take form values.
-      ARX_LLM_MODEL: qwen36-agent
+      # ARX_LLM_BASE_URL, ARX_LLM_API_KEY and ARX_LLM_MODEL come from the AI
+      # binding in arx.yaml; the key is only a placeholder in the sandbox.
       OPENCODE_CONFIG_CONTENT: >-
         {"$schema":"https://opencode.ai/config.json",
         "provider":{"arx":{"npm":"@ai-sdk/openai-compatible","name":"ARX LLM Gateway",

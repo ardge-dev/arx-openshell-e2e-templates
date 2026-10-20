@@ -8,3 +8,7 @@ spec:
     inject:
       baseUrl: ARX_LLM_BASE_URL
       apiKey: ARX_LLM_API_KEY
+    # The model instance the user picked for the manifest's llm slot.
+    models:
+      - name: llm
+        inject: ARX_LLM_MODEL
