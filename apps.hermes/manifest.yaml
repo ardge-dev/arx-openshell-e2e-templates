@@ -1,0 +1,98 @@
+version: "1.0"
+
+metadata:
+  id: apps.hermes
+  name: Hermes Agent
+  version: 0.22.2
+  releaseDate: 2026-10-21
+  type: apps
+  categories:
+    - Productivity
+  subtitle: "A general-purpose AI agent that runs inside an OpenShell sandbox and uses models deployed on ARX, with every file and network access governed by policy."
+  description: |
+    Hermes Agent is an open-source, general-purpose agent from Nous Research. It plans multi-step tasks, runs tools such as a terminal and file editor, and learns reusable skills as it works.
+
+    On ARX it runs inside an OpenShell sandbox rather than as an ordinary container. The sandbox policy decides which paths the agent may touch and which hosts it may reach; everything else is denied by the kernel and the sandbox supervisor, not by the agent itself. Hosts the agent tries to reach show up as requests that an administrator can approve or reject.
+
+    The agent calls models deployed on ARX through the llm-gateway. It never holds the real inference token: it only sees a placeholder, which the supervisor swaps for the token on requests to the gateway.
+  icon: ./hermes.svg
+  developer:
+    name: Nous Research
+    url: https://github.com/NousResearch/hermes-agent
+  supportedLanguages:
+    - en-US
+  tags:
+    - agent
+    - assistant
+    - sandbox
+    - openshell
+
+# The agent is useless without a model, so the slot is required. The
+# instance the user picks reaches the sandbox as ARX_LLM_MODEL (arx.yaml).
+dependencies:
+  - kind: models
+    match:
+      llm:
+        conditions:
+          model.categories: [llm]
+          model.params: ">=30b"
+    recommends:
+      - id: qwen3-6-35b
+        name: "Qwen3.6 35B"
+        models:
+          llm:
+            id: library.models.qwen3-6@35b-a3b-fp8
+            deploy:
+              contextWindow: 262144
+              inferenceEngine: nvidia-vllm
+              override:
+                enable-prefix-caching: ""
+                enable-auto-tool-choice: ""
+                reasoning-parser: "qwen3"
+                tool-call-parser: "qwen3_coder"
+
+resources:
+  cpu: "1"
+  memory: "2Gi"
+  storage: "5Gi"
+  gpu: 0
+  vram: null
+
+deployment:
+  type: openshell
+  sandbox:
+    image: docker.io/nousresearch/hermes-agent:v0.22.2
+    # Hermes reads its provider from config.yaml, not from env alone, so the
+    # first start writes one that points at the llm-gateway. ${...} is
+    # expanded by Hermes at load time, not by the shell. The image's s6
+    # entrypoint is bypassed: the sandbox supervisor is the process manager.
+    command:
+      - /bin/sh
+      - -c
+      - >-
+        mkdir -p "$HERMES_HOME" &&
+        { [ -f "$HERMES_HOME/config.yaml" ] ||
+        printf 'model:\n  provider: custom\n  base_url: ${ARX_LLM_BASE_URL}\n  api_key: ${ARX_LLM_API_KEY}\n  default: ${ARX_LLM_MODEL}\n'
+        > "$HERMES_HOME/config.yaml"; } &&
+        exec /opt/hermes/.venv/bin/hermes serve --skip-build --host 127.0.0.1 --port 9119
+    env:
+      # State (config, sessions, skills, memory) lives under the workdir, so
+      # it is kept across stop and start.
+      HERMES_HOME: /sandbox/.hermes
+      HERMES_WRITE_SAFE_ROOT: /sandbox
+      XDG_RUNTIME_DIR: /tmp/hermes-runtime
+    policy:
+      filesystem:
+        includeWorkdir: true
+        readOnly:
+          - /usr
+          - /lib
+          - /etc
+          - /bin
+          - /opt/hermes
+        readWrite:
+          - /tmp
+    inference:
+      # The interpreter behind /opt/hermes/.venv/bin/python (arm64 image).
+      binaries:
+        - /opt/hermes/tools/python-3.14.7+20260901-linux-arm64/bin/python3.14
