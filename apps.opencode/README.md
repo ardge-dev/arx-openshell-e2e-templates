@@ -12,6 +12,20 @@ AI coding agent deployed as an OpenShell sandbox instead of a Helm release.
 - Credential: the agent reads `ARX_LLM_API_KEY` as an OpenShell placeholder;
   the supervisor substitutes the real inference token on gateway requests.
 
+## Web access
+
+Two sandbox ports are published on NodePorts, each through a proxy the
+operator runs in front of the OpenShell gateway:
+
+| Port | Use |
+|------|-----|
+| `4096` (`ui`) | OpenCode web UI and API; the desktop shortcut opens it |
+| `8000` (`preview`) | Free for a server the agent starts, e.g. `python -m http.server 8000 --bind 127.0.0.1` |
+
+Anything else the agent listens on stays unreachable. The NodePorts are not
+behind the ARX login, so anyone who can reach the host can use the agent
+through `4096`.
+
 ## Model
 
 The install dialog asks for a model for the `llm` slot and recommends

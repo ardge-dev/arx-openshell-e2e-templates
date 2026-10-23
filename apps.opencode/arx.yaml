@@ -12,3 +12,29 @@ spec:
     models:
       - name: llm
         inject: ARX_LLM_MODEL
+
+  # Ports are loopback ports inside the sandbox. The operator registers each
+  # one with the OpenShell gateway and runs a proxy behind the NodePort, so
+  # no sandbox port is reachable without being listed here.
+  network:
+    services:
+      http:
+        type: NodePort
+        ports:
+          # opencode serve: web UI and API.
+          - name: ui
+            port: 4096
+          # Free port for services the agent starts itself, e.g. a preview
+          # server for the code it writes.
+          - name: preview
+            port: 8000
+
+  desktop:
+    shortcuts:
+      - label: OpenCode
+        open:
+          - newtab
+        serviceRef: http
+        portRef: ui
+        scheme: http
+        path: /
