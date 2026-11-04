@@ -1,0 +1,46 @@
+version: "1.0"
+
+metadata:
+  id: apps.ngrok-crossapp
+  name: ngrok (cross-app probe)
+  version: 1.0.0
+  releaseDate: 2026-11-04
+  type: apps
+  categories:
+    - Networking
+  subtitle: "E2E probe for network.crossApp: the ngrok app declaring that its Pods may reach other apps."
+  description: |
+    The ngrok app from the official catalog, republished to exercise network.crossApp end to end:
+    the platform copies the key onto the installed application, and the operator labels its Pods
+    so the per-app isolation policies let them open connections to other applications.
+  icon: ./ngrok.svg
+  developer:
+    name: Ardge
+    url: https://www.ardge.com
+  supportedLanguages:
+    - en-US
+  tags:
+    - ngrok
+    - e2e
+
+network:
+  crossApp: true
+
+resources:
+  cpu: "0.5"
+  memory: "256Mi"
+  storage: "1Gi"
+  gpu: 0
+  vram: null
+
+deployment:
+  type: helm
+  helmRepository:
+    type: oci
+    name: arx-helm-charts
+    url: oci://registry.ardge.me/ardgecharts
+  helmChart:
+    chart: gear-arx-ngrok
+    version: "1.0.1"
+    valuesFiles:
+      - manifests/values.yaml

@@ -1,0 +1,28 @@
+apiVersion: arx.ardge.com/v1
+kind: ArxBinding
+spec:
+  network:
+    services:
+      http:
+        selectorLabelValue: ngrok
+        type: NodePort
+        ports:
+          - port: 8080
+
+  storage:
+    - name: ngrok-data
+      nameTemplate: "{{ .Release.Name }}-storage"
+      access: readwrite
+      storageClass: storage.storageClassName
+      accessMode: storage.accessMode
+      label: storage.labels
+
+  desktop:
+    shortcuts:
+      - label: ngrok
+        open:
+          - iframe
+          - newtab
+        serviceRef: http
+        scheme: http
+        path: /
