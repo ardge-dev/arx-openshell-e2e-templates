@@ -3,7 +3,7 @@ version: "1.0"
 metadata:
   id: apps.ngrok-crossapp
   name: ngrok (cross-app probe)
-  version: 1.0.0
+  version: 1.0.1
   releaseDate: 2026-11-04
   type: apps
   categories:
@@ -22,9 +22,6 @@ metadata:
   tags:
     - ngrok
     - e2e
-
-network:
-  crossApp: true
 
 resources:
   cpu: "0.5"
